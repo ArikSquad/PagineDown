@@ -54,7 +54,6 @@ public class ListOptions {
     protected Color themeColor = new Color(0x00fb9a);
     protected boolean spaceAfterHeader = true;
     protected boolean spaceBeforeFooter = true;
-    protected boolean escapeItemsMineDown = true;
     @NotNull
     protected String itemSeparator = "\n";
     protected int itemsPerPage = 10;
@@ -122,12 +121,6 @@ public class ListOptions {
         @NotNull
         public Builder setCommand(@NotNull String command) {
             options.command = command;
-            return this;
-        }
-
-        @NotNull
-        public Builder setEscapeItemsMineDown(final boolean escapeItemsMineDown) {
-            options.escapeItemsMineDown = escapeItemsMineDown;
             return this;
         }
 

@@ -19,6 +19,7 @@
 
 package net.william278.paginedown;
 
+import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,7 @@ public class PaginatedListTests {
 
     @Test
     public void testListPagination() {
-        final String listPage = PaginatedList.of(generateListData(100, "Element #")).getRawPage(3);
+        final Component listPage = PaginatedList.of(generateListData(100, "Element #")).getRawPage(3);
         Assertions.assertNotNull(listPage);
     }
 

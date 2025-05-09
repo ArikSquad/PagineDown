@@ -20,15 +20,17 @@
 package net.william278.paginedown;
 
 
-import de.themoep.minedown.adventure.MineDown;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /**
- * A class used to generate {@link MineDown} formatted chat menus of paginated list items.
+ * A class used to generate {@link net.kyori.adventure.text.Component} formatted chat menus of paginated list items.
  * <p>
  * A paginated list contains the following elements:
  * <ul>
@@ -38,7 +40,7 @@ import java.util.stream.Collectors;
  * </ul>
  * You can supply {@link ListOptions} to modify the format of each element, including shortcuts for modifying a theme color.
  * Once you have created a {@link PaginatedList} object using the static {@code get(items, options)},
- * you can easily generate a {@link MineDown} formatted chat menu for a given page using the {@code getPage()} methods.
+ * you can easily generate a {@link net.kyori.adventure.text.Component} formatted chat menu for a given page using the {@code getPage()} methods.
  *
  * @author William278
  * @see ListOptions
@@ -94,40 +96,39 @@ public class PaginatedList {
 
 
     /**
-     * Returns a {@link MineDown} formatted message to be sent to a player of the paginated list for the nearest specified page that exists
+     * Returns a {@link net.kyori.adventure.text.Component} formatted message to be sent to a player of the paginated list for the nearest specified page that exists
      * <p>List formats and options from the {@link ListOptions} are applied to generate list pages.
      * </p>{@code #getNearestValidPage()} will return the nearest valid page (i.e. values below 0 will be set to 0, values above the maximum page will be set to the maximum page)
      *
      * @param page The page number to get
-     * @return A {@link MineDown} object, for formatting the list
+     * @return A {@link net.kyori.adventure.text.Component} object, for formatting the list
      */
     @NotNull
-    public MineDown getNearestValidPage(final int page) {
+    public net.kyori.adventure.text.Component getNearestValidPage(final int page) {
         return getPage(Math.max(1, Math.min(getTotalPages(), page)));
     }
 
     /**
-     * Returns a {@link MineDown} formatted message to be sent to a player of the paginated list for the specified page
+     * Returns a {@link net.kyori.adventure.text.Component} formatted message to be sent to a player of the paginated list for the specified page
      * <p>List formats and options from the {@link ListOptions} are applied to generate the list.
      *
      * @param page The page number to get
-     * @return A {@link MineDown} object, for formatting the list
+     * @return A {@link net.kyori.adventure.text.Component} object, for formatting the list
      * @throws PaginationException If the page number is out of bounds
      */
-    public MineDown getPage(final int page) throws PaginationException {
-        return new MineDown(getRawPage(page));
+    public net.kyori.adventure.text.Component getPage(final int page) throws PaginationException {
+        return getRawPage(page);
     }
 
     /**
-     * Generates a raw string of pre-{@link MineDown}-formatted text that when formatted will create the page menu.
+     * Generates a raw string of pre-{@link net.kyori.adventure.text.Component}-formatted text that when formatted will create the page menu.
      * <p>List formats and options from the {@link ListOptions} are applied to generate the list.
      *
      * @param page The page number to get
-     * @return A raw string of pre-MineDown-formatted text, representing the page menu.
      * @throws PaginationException If the page number is out of bounds
      */
     @NotNull
-    public String getRawPage(final int page) throws PaginationException {
+    public Component getRawPage(final int page) throws PaginationException {
         if (page < 1) {
             throw new PaginationException("Page index must be >= 1");
         }
@@ -135,28 +136,30 @@ public class PaginatedList {
             throw new PaginationException("Page index must be <= the total number of pages (" + getTotalPages() + ")");
         }
 
-        final StringJoiner menuJoiner = new StringJoiner("\n");
+        List<Component> menuComponents = new ArrayList<>();
+
         if (!options.headerFormat.isBlank()) {
-            menuJoiner.add(formatPageString(options.headerFormat, page));
+            menuComponents.add(formatPageString(options.headerFormat, page));
             if (options.spaceAfterHeader) {
-                menuJoiner.add("");
+                menuComponents.add(Component.text(""));
             }
         }
 
-        if (options.escapeItemsMineDown) {
-            menuJoiner.add(getItemsForPage(page).stream().map(MineDown::escape)
-                    .collect(Collectors.joining(options.itemSeparator)));
-        } else {
-            menuJoiner.add(String.join(options.itemSeparator, getItemsForPage(page)));
-        }
+        List<Component> itemComponents = getItemsForPage(page).stream()
+                .map(item -> deserializeRawItem(item, page))
+                .collect(Collectors.toList());
+
+        Component itemsComponent = joinComponents(itemComponents, Component.text(options.itemSeparator));
+        menuComponents.add(itemsComponent);
 
         if (!options.footerFormat.isBlank()) {
             if (options.spaceBeforeFooter) {
-                menuJoiner.add("");
+                menuComponents.add(Component.text(""));
             }
-            menuJoiner.add(formatPageString(options.footerFormat, page));
+            menuComponents.add(formatPageString(options.footerFormat, page));
         }
-        return menuJoiner.toString();
+
+        return joinComponents(menuComponents, Component.newline());
     }
 
     /**
@@ -187,7 +190,7 @@ public class PaginatedList {
      * @return The formatted page string
      */
     @NotNull
-    private String formatPageString(@NotNull String format, int page) {
+    private Component formatPageString(@NotNull String format, int page) {
         final StringBuilder convertedFormat = new StringBuilder();
         StringBuilder currentPlaceholder = new StringBuilder();
         boolean readingPlaceholder = false;
@@ -257,7 +260,12 @@ public class PaginatedList {
                 convertedFormat.append(c);
             }
         }
-        return convertedFormat.toString();
+        return MiniMessage.miniMessage().deserialize(convertedFormat.toString());
+    }
+
+    @NotNull
+    private Component deserializeRawItem(@NotNull String rawItem, int page) {
+        return formatPageString(rawItem, page);
     }
 
     /**
@@ -267,34 +275,61 @@ public class PaginatedList {
      * @return The formatted page jumper
      */
     @NotNull
-    private String formatPageJumper(final int page) {
+    private Component formatPageJumper(final int page) {
         return formatPageString(options.pageJumperPageFormat.replaceAll("%target_page_index%",
                 Integer.toString(page)), page);
     }
 
     @NotNull
-    protected String getPageJumperButtons(final int page) {
-        final StringJoiner pageGroups = new StringJoiner(options.pageJumperGroupSeparator);
-        StringJoiner pages = new StringJoiner(options.pageJumperPageSeparator);
+    protected Component getPageJumperButtons(final int page) {
+        Component result = Component.empty();
+        Component groupSeparator = MiniMessage.miniMessage().deserialize(options.pageJumperGroupSeparator);
+        Component pageSeparator = MiniMessage.miniMessage().deserialize(options.pageJumperPageSeparator);
+
+        List<Component> pageGroups = new ArrayList<>();
+        List<Component> pages = new ArrayList<>();
         int lastPage = 1;
+
         for (int i = 1; i <= getTotalPages(); i++) {
             if (i <= options.pageJumperStartButtons || i > getTotalPages() - options.pageJumperEndButtons || page == i) {
                 if (i - lastPage > 1) {
-                    pageGroups.add(pages.toString());
-                    pages = new StringJoiner(options.pageJumperPageSeparator);
+                    // Add current page group and start a new one
+                    if (!pages.isEmpty()) {
+                        pageGroups.add(joinComponents(pages, pageSeparator));
+                        pages = new ArrayList<>();
+                    }
                 }
+
                 if (page == i) {
                     pages.add(formatPageString(options.pageJumperCurrentPageFormat, i));
                 } else {
-                    pages.add(formatPageString(formatPageJumper(i), i));
+                    pages.add(formatPageJumper(i));
                 }
                 lastPage = i;
             }
         }
-        if (!pages.toString().isBlank()) {
-            pageGroups.add(pages.toString());
+
+        if (!pages.isEmpty()) {
+            pageGroups.add(joinComponents(pages, pageSeparator));
         }
-        return pageGroups.toString();
+
+        return joinComponents(pageGroups, groupSeparator);
+    }
+
+    @NotNull
+    private Component joinComponents(List<Component> components, Component separator) {
+        if (components.isEmpty()) {
+            return Component.empty();
+        }
+        if (components.size() == 1) {
+            return components.get(0);
+        }
+
+        Component result = components.get(0);
+        for (int i = 1; i < components.size(); i++) {
+            result = result.append(separator).append(components.get(i));
+        }
+        return result;
     }
 
 }

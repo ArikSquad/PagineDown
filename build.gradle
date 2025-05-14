@@ -7,7 +7,7 @@ plugins {
 
 
 group 'net.william278'
-version "1.1.3${versionMetadata()}"
+version "1.1.2${versionMetadata()}"
 defaultTasks 'licenseFormat', 'build'
 
 repositories {
@@ -16,12 +16,10 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'net.kyori:adventure-api:4.21.0'
-    compileOnly "net.kyori:adventure-text-minimessage:4.21.0"
-    compileOnly "net.kyori:adventure-text-serializer-plain:4.21.0"
+    compileOnly 'net.william278:minedown:1.8.2'
     compileOnly 'org.jetbrains:annotations:24.1.0'
 
-    testImplementation 'net.kyori:adventure-api:4.21.0'
+    testImplementation 'net.william278:minedown:1.8.2'
     testImplementation 'net.kyori:adventure-platform-bukkit:4.3.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
@@ -69,26 +67,42 @@ test {
 
 publishing {
     repositories {
-        maven {
-            name = 'mikart'
-            url = uri('https://maven.mikart.eu/snapshots')
-            credentials {
-                username = System.getenv('MIKART_MAVEN_USER')
-                password = System.getenv('MIKART_MAVEN_PASSWORD')
-            }
-            authentication {
-                basic(BasicAuthentication)
+        if (System.getenv("RELEASES_MAVEN_USERNAME") != null) {
+            maven {
+                name = "william278-releases"
+                url = "https://repo.william278.net/releases"
+                credentials {
+                    username = System.getenv("RELEASES_MAVEN_USERNAME")
+                    password = System.getenv("RELEASES_MAVEN_PASSWORD")
+                }
+                authentication {
+                    basic(BasicAuthentication)
+                }
             }
         }
-    }
+        if (System.getenv("SNAPSHOTS_MAVEN_USERNAME") != null) {
+            maven {
+                name = "william278-snapshots"
+                url = "https://repo.william278.net/snapshots"
+                credentials {
+                    username = System.getenv("SNAPSHOTS_MAVEN_USERNAME")
+                    password = System.getenv("SNAPSHOTS_MAVEN_PASSWORD")
+                }
+                authentication {
+                    basic(BasicAuthentication)
+                }
+            }
+        }
 
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            groupId = 'net.william278'
-            artifactId = 'paginedown'
-            version = "$rootProject.version"
+        publications {
+            mavenJava(MavenPublication) {
+                groupId = 'net.william278'
+                artifactId = 'paginedown'
+                version = "$rootProject.version"
+                artifact jar
+                artifact javadocJar
+                artifact sourcesJar
+            }
         }
     }
 }

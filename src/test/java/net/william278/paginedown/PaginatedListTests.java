@@ -29,10 +29,10 @@ import java.util.List;
 public class PaginatedListTests {
 
     // Generates dummy list data for testing
-    private List<String> generateListData(final int size, final String format) {
-        final ArrayList<String> dummyData = new ArrayList<>();
+    private List<Component> generateListData(final int size, final String format) {
+        final ArrayList<Component> dummyData = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            dummyData.add(format.replaceAll("#", String.valueOf(i + 1)));
+            dummyData.add(Component.text(format.replaceAll("#", String.valueOf(i + 1))));
         }
         return dummyData;
     }
@@ -60,8 +60,8 @@ public class PaginatedListTests {
                         .setItemsPerPage(10)
                         .setPageJumperStartButtons(2)
                         .setPageJumperEndButtons(2)
-                        .setPageJumperPageFormat("%target_page_index%")
-                        .setPageJumperCurrentPageFormat("%current_page%")
+                        .setPageJumperPageFormat(Component.text("%target_page_index%"))
+                        .setPageJumperCurrentPageFormat(Component.text("%current_page%"))
                         .build());
         Assertions.assertEquals("1|2…19|20", longList.getPageJumperButtons(2));
         Assertions.assertEquals("1|2…6…19|20", longList.getPageJumperButtons(6));
@@ -76,8 +76,8 @@ public class PaginatedListTests {
                         .setItemsPerPage(10)
                         .setPageJumperStartButtons(2)
                         .setPageJumperEndButtons(2)
-                        .setPageJumperPageFormat("%target_page_index%")
-                        .setPageJumperCurrentPageFormat("%current_page%")
+                        .setPageJumperPageFormat(Component.text("%target_page_index%"))
+                        .setPageJumperCurrentPageFormat(Component.text("%current_page%"))
                         .build());
         Assertions.assertEquals("1|2…4|5", mediumList.getPageJumperButtons(1));
         Assertions.assertEquals("1|2|3|4|5", mediumList.getPageJumperButtons(3));
@@ -91,8 +91,8 @@ public class PaginatedListTests {
                         .setItemsPerPage(10)
                         .setPageJumperStartButtons(2)
                         .setPageJumperEndButtons(2)
-                        .setPageJumperPageFormat("%target_page_index%")
-                        .setPageJumperCurrentPageFormat("%current_page%")
+                        .setPageJumperPageFormat(Component.text("%target_page_index%"))
+                        .setPageJumperCurrentPageFormat(Component.text("%current_page%"))
                         .build());
         Assertions.assertEquals("1|2", shortList.getPageJumperButtons(2));
     }

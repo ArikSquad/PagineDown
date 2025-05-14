@@ -19,6 +19,8 @@
 
 package net.william278.paginedown;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -29,25 +31,25 @@ import java.awt.*;
 public class ListOptions {
 
     @NotNull
-    protected String headerFormat = "[Viewing %topic%](%color%) [(%first_item_on_page_index%-%last_item_on_page_index% of](%color%) [%total_items%](%color% bold)[)](%color%)";
+    protected Component headerFormat = MiniMessage.miniMessage().deserialize("[Viewing %topic%](%color%) [(%first_item_on_page_index%-%last_item_on_page_index% of](%color%) [%total_items%](%color% bold)[)](%color%)");
     @NotNull
-    protected String footerFormat = "%previous_page_button%Page [%current_page%](%color%)/[%total_pages%](%color%)%next_page_button%   %page_jumpers%";
+    protected Component footerFormat = MiniMessage.miniMessage().deserialize("%previous_page_button%Page [%current_page%](%color%)/[%total_pages%](%color%)%next_page_button%   %page_jumpers%");
     @NotNull
-    protected String previousButtonFormat = "[◁](white show_text=%color%View previous page \\(%previous_page_index%\\) run_command=/%command% %previous_page_index%) ";
+    protected Component previousButtonFormat = MiniMessage.miniMessage().deserialize("[show_text=%color%View previous page \\(%previous_page_index%\\) run_command=/%command% %previous_page_index%) ");
     @NotNull
-    protected String nextButtonFormat = " [▷](white show_text=%color%View next page \\(%next_page_index%\\) run_command=/%command% %next_page_index%)";
+    protected Component nextButtonFormat = MiniMessage.miniMessage().deserialize(" [show_text=%color%View next page \\(%next_page_index%\\) run_command=/%command% %next_page_index%)");
     @NotNull
-    protected String pageJumpersFormat = "(%page_jump_buttons%)";
+    protected Component pageJumpersFormat = MiniMessage.miniMessage().deserialize("(%page_jump_buttons%)");
     @NotNull
-    protected String pageJumperPageSeparator = "|";
+    protected Component pageJumperPageSeparator = MiniMessage.miniMessage().deserialize("|");
     @NotNull
-    protected String pageJumperGroupSeparator = "…";
+    protected Component pageJumperGroupSeparator = MiniMessage.miniMessage().deserialize(")");
     @NotNull
-    protected String pageJumperCurrentPageFormat = "[%current_page%](%color%)";
+    protected Component pageJumperCurrentPageFormat = MiniMessage.miniMessage().deserialize("[%current_page%](%color%)");
     @NotNull
-    protected String pageJumperPageFormat = "[%target_page_index%](show_text=&7Jump to page %target_page_index% run_command=/%command% %target_page_index%)";
+    protected Component pageJumperPageFormat = MiniMessage.miniMessage().deserialize("[%target_page_index%](show_text=&7Jump to page %target_page_index% run_command=/%command% %target_page_index%)");
     @NotNull
-    protected String topic = "List";
+    protected Component topic = Component.text("List");
     @NotNull
     protected String command = "example";
     @NotNull
@@ -71,13 +73,13 @@ public class ListOptions {
         private final ListOptions options = new ListOptions();
 
         @NotNull
-        public Builder setHeaderFormat(@NotNull String headerFormat) {
+        public Builder setHeaderFormat(@NotNull Component headerFormat) {
             options.headerFormat = headerFormat;
             return this;
         }
 
         @NotNull
-        public Builder setFooterFormat(@NotNull String footerFormat) {
+        public Builder setFooterFormat(@NotNull Component footerFormat) {
             options.footerFormat = footerFormat;
             return this;
         }
@@ -113,7 +115,7 @@ public class ListOptions {
         }
 
         @NotNull
-        public Builder setTopic(@NotNull String topic) {
+        public Builder setTopic(@NotNull Component topic) {
             options.topic = topic;
             return this;
         }
@@ -125,43 +127,43 @@ public class ListOptions {
         }
 
         @NotNull
-        public Builder setPageJumpersFormat(@NotNull String pageJumpersFormat) {
+        public Builder setPageJumpersFormat(@NotNull Component pageJumpersFormat) {
             options.pageJumpersFormat = pageJumpersFormat;
             return this;
         }
 
         @NotNull
-        public Builder setPageJumperPageSeparator(@NotNull String pageJumperPageSeparator) {
+        public Builder setPageJumperPageSeparator(@NotNull Component pageJumperPageSeparator) {
             options.pageJumperPageSeparator = pageJumperPageSeparator;
             return this;
         }
 
         @NotNull
-        public Builder setPageJumperPageFormat(@NotNull String pageJumperPageFormat) {
+        public Builder setPageJumperPageFormat(@NotNull Component pageJumperPageFormat) {
             options.pageJumperPageFormat = pageJumperPageFormat;
             return this;
         }
 
         @NotNull
-        public Builder setPageJumperGroupSeparator(@NotNull String pageJumperGroupSeparator) {
+        public Builder setPageJumperGroupSeparator(@NotNull Component pageJumperGroupSeparator) {
             options.pageJumperGroupSeparator = pageJumperGroupSeparator;
             return this;
         }
 
         @NotNull
-        public Builder setPageJumperCurrentPageFormat(@NotNull String pageJumperCurrentPageFormat) {
+        public Builder setPageJumperCurrentPageFormat(@NotNull Component pageJumperCurrentPageFormat) {
             options.pageJumperCurrentPageFormat = pageJumperCurrentPageFormat;
             return this;
         }
 
         @NotNull
-        public Builder setPreviousButtonFormat(@NotNull String previousButtonFormat) {
+        public Builder setPreviousButtonFormat(@NotNull Component previousButtonFormat) {
             options.previousButtonFormat = previousButtonFormat;
             return this;
         }
 
         @NotNull
-        public Builder setNextButtonFormat(@NotNull String nextButtonFormat) {
+        public Builder setNextButtonFormat(@NotNull Component nextButtonFormat) {
             options.nextButtonFormat = nextButtonFormat;
             return this;
         }

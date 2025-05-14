@@ -21,12 +21,10 @@ package net.william278.paginedown;
 
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /**
@@ -58,7 +56,7 @@ public class PaginatedList {
      * A list of items to be paginated; can be MineDown formatted
      */
     @NotNull
-    private final List<String> items;
+    private final List<? extends Component> items;
 
     /**
      * Private constructor used by {@code #get(List, ListOptions)}
@@ -66,7 +64,7 @@ public class PaginatedList {
      * @param items   a list of items to be paginated
      * @param options {@link ListOptions} to be used for generating list pages
      */
-    private PaginatedList(@NotNull List<String> items, @NotNull ListOptions options) {
+    private PaginatedList(@NotNull List<? extends Component> items, @NotNull ListOptions options) {
         this.items = items;
         this.options = options;
     }
@@ -78,7 +76,7 @@ public class PaginatedList {
      * @return A new {@link PaginatedList}
      */
     @NotNull
-    public static PaginatedList of(@NotNull List<String> items) {
+    public static PaginatedList of(@NotNull List<? extends Component> items) {
         return new PaginatedList(items, new ListOptions.Builder().build());
     }
 
@@ -90,7 +88,7 @@ public class PaginatedList {
      * @return A new {@link PaginatedList}
      */
     @NotNull
-    public static PaginatedList of(@NotNull List<String> items, @NotNull ListOptions options) {
+    public static PaginatedList of(@NotNull List<? extends Component> items, @NotNull ListOptions options) {
         return new PaginatedList(items, options);
     }
 
@@ -104,7 +102,7 @@ public class PaginatedList {
      * @return A {@link net.kyori.adventure.text.Component} object, for formatting the list
      */
     @NotNull
-    public net.kyori.adventure.text.Component getNearestValidPage(final int page) {
+    public Component getNearestValidPage(final int page) {
         return getPage(Math.max(1, Math.min(getTotalPages(), page)));
     }
 
@@ -116,7 +114,7 @@ public class PaginatedList {
      * @return A {@link net.kyori.adventure.text.Component} object, for formatting the list
      * @throws PaginationException If the page number is out of bounds
      */
-    public net.kyori.adventure.text.Component getPage(final int page) throws PaginationException {
+    public Component getPage(final int page) throws PaginationException {
         return getRawPage(page);
     }
 
@@ -138,21 +136,19 @@ public class PaginatedList {
 
         List<Component> menuComponents = new ArrayList<>();
 
-        if (!options.headerFormat.isBlank()) {
+        if (!options.headerFormat.contains(Component.text(""))) {
             menuComponents.add(formatPageString(options.headerFormat, page));
             if (options.spaceAfterHeader) {
                 menuComponents.add(Component.text(""));
             }
         }
 
-        List<Component> itemComponents = getItemsForPage(page).stream()
-                .map(item -> deserializeRawItem(item, page))
-                .collect(Collectors.toList());
+        List<Component> itemComponents = getItemsForPage(page).stream().map(item -> formatPageString(item, page)).collect(Collectors.toList());
 
         Component itemsComponent = joinComponents(itemComponents, Component.text(options.itemSeparator));
         menuComponents.add(itemsComponent);
 
-        if (!options.footerFormat.isBlank()) {
+        if (!options.footerFormat.contains(Component.text(""))) {
             if (options.spaceBeforeFooter) {
                 menuComponents.add(Component.text(""));
             }
@@ -178,94 +174,78 @@ public class PaginatedList {
      * @return The sub-list of items to be shown on a given page
      */
     @NotNull
-    private List<String> getItemsForPage(final int page) {
+    private List<? extends Component> getItemsForPage(final int page) {
         return items.subList((page - 1) * options.itemsPerPage, Math.min(items.size(), page * options.itemsPerPage));
     }
 
-    /**
-     * Formats a ListOption placeholder format with values
-     *
-     * @param format The format string
-     * @param page   The page number
-     * @return The formatted page string
-     */
     @NotNull
-    private Component formatPageString(@NotNull String format, int page) {
-        final StringBuilder convertedFormat = new StringBuilder();
-        StringBuilder currentPlaceholder = new StringBuilder();
-        boolean readingPlaceholder = false;
-        for (char c : format.toCharArray()) {
-            if (c == '%') {
-                if (readingPlaceholder) {
-                    switch (currentPlaceholder.toString().toLowerCase()) {
-                        case "topic":
-                            convertedFormat.append(formatPageString(options.topic, page));
-                            break;
-                        case "color":
-                            convertedFormat.append(String.format("#%02x%02x%02x", options.themeColor.getRed(), options.themeColor.getGreen(), options.themeColor.getBlue()));
-                            break;
-                        case "first_item_on_page_index":
-                            convertedFormat.append(((page - 1) * options.itemsPerPage) + 1);
-                            break;
-                        case "last_item_on_page_index":
-                            convertedFormat.append(((page - 1) * options.itemsPerPage) + getItemsForPage(page).size());
-                            break;
-                        case "total_items":
-                            convertedFormat.append(items.size());
-                            break;
-                        case "current_page":
-                            convertedFormat.append(page);
-                            break;
-                        case "total_pages":
-                            convertedFormat.append(getTotalPages());
-                            break;
-                        case "previous_page_button":
-                            if (page > 1) {
-                                convertedFormat.append(formatPageString(options.previousButtonFormat, page));
-                            }
-                            break;
-                        case "next_page_button":
-                            if (page < getTotalPages()) {
-                                convertedFormat.append(formatPageString(options.nextButtonFormat, page));
-                            }
-                            break;
-                        case "next_page_index":
-                            convertedFormat.append(page + 1);
-                            break;
-                        case "previous_page_index":
-                            convertedFormat.append(page - 1);
-                            break;
-                        case "command":
-                            convertedFormat.append(options.command);
-                            break;
-                        case "page_jumpers":
-                            if (getTotalPages() > 2) {
-                                convertedFormat.append(formatPageString(options.pageJumpersFormat, page));
-                            }
-                            break;
-                        case "page_jump_buttons": {
-                            convertedFormat.append(getPageJumperButtons(page));
-                            break;
-                        }
-                    }
-                } else {
-                    currentPlaceholder = new StringBuilder();
-                }
-                readingPlaceholder = !readingPlaceholder;
-                continue;
-            }
-            if (readingPlaceholder) {
-                currentPlaceholder.append(c);
-            } else {
-                convertedFormat.append(c);
-            }
-        }
-        return MiniMessage.miniMessage().deserialize(convertedFormat.toString());
-    }
+    private Component formatPageString(@NotNull Component component, int page) {
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%color%").replacement(String.format("#%02x%02x%02x", options.themeColor.getRed(), options.themeColor.getGreen(), options.themeColor.getBlue()));
+        });
 
-    @NotNull
-    private Component deserializeRawItem(@NotNull String rawItem, int page) {
-        return formatPageString(rawItem, page);
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%first_item_on_page_index%").replacement(String.valueOf(((page - 1) * options.itemsPerPage) + 1));
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%last_item_on_page_index%").replacement(String.valueOf(((page - 1) * options.itemsPerPage) + getItemsForPage(page).size()));
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%total_items%").replacement(String.valueOf(items.size()));
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%current_page%").replacement(String.valueOf(page));
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%total_pages%").replacement(String.valueOf(getTotalPages()));
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%next_page_index%").replacement(String.valueOf(page + 1));
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%previous_page_index%").replacement(String.valueOf(page - 1));
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%command%").replacement(options.command);
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%topic%").replacement((matchResult, builder) -> builder.append(formatPageString(options.topic, page)));
+        });
+
+        component = component.replaceText(configurer -> {
+            configurer.matchLiteral("%previous_page_button%").replacement((matchResult, builder) -> {
+                if (page > 1) {
+                    builder.append(formatPageString(options.previousButtonFormat, page));
+                }
+                return builder;
+            });
+        });
+
+        return component.replaceText(configurer -> {
+            configurer.matchLiteral("%next_page_button%").replacement((matchResult, builder) -> {
+                if (page < getTotalPages()) {
+                    builder.append(formatPageString(options.nextButtonFormat, page));
+                }
+                return builder;
+            });
+
+            configurer.matchLiteral("%page_jumpers%").replacement((matchResult, builder) -> {
+                if (getTotalPages() > 2) {
+                    builder.append(formatPageString(options.pageJumpersFormat, page));
+                }
+                return builder;
+            });
+
+            configurer.matchLiteral("%page_jump_buttons%").replacement((matchResult, builder) -> builder.append(getPageJumperButtons(page)));
+        });
     }
 
     /**
@@ -276,15 +256,16 @@ public class PaginatedList {
      */
     @NotNull
     private Component formatPageJumper(final int page) {
-        return formatPageString(options.pageJumperPageFormat.replaceAll("%target_page_index%",
-                Integer.toString(page)), page);
+        return formatPageString(options.pageJumperPageFormat.replaceText(configurer -> {
+            configurer.matchLiteral("%target_page_index%").replacement(Integer.toString(page));
+        }), page);
     }
 
     @NotNull
     protected Component getPageJumperButtons(final int page) {
         Component result = Component.empty();
-        Component groupSeparator = MiniMessage.miniMessage().deserialize(options.pageJumperGroupSeparator);
-        Component pageSeparator = MiniMessage.miniMessage().deserialize(options.pageJumperPageSeparator);
+        Component groupSeparator = options.pageJumperGroupSeparator;
+        Component pageSeparator = options.pageJumperPageSeparator;
 
         List<Component> pageGroups = new ArrayList<>();
         List<Component> pages = new ArrayList<>();

@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * <ul>
  *     <li>A header, by default identifying the items listed on the current page</li>
  *     <li>The items, separated by new lines by default</li>
- *     <li>A footer, by default containing page navigation buttons and quick-jump page numbers</li>
+ *     <li>A footer, by default, containing page navigation buttons and quick-jump page numbers</li>
  * </ul>
  * You can supply {@link ListOptions} to modify the format of each element, including shortcuts for modifying a theme color.
  * Once you have created a {@link PaginatedList} object using the static {@code get(items, options)},
@@ -145,7 +145,19 @@ public class PaginatedList {
 
         List<Component> itemComponents = getItemsForPage(page).stream().map(item -> formatPageString(item, page)).collect(Collectors.toList());
 
-        Component itemsComponent = joinComponents(itemComponents, Component.text(options.itemSeparator));
+        Component itemsComponent;
+        if (itemComponents.isEmpty()) {
+            itemsComponent = Component.empty();
+        } else if (itemComponents.size() == 1) {
+            itemsComponent = itemComponents.get(0);
+        } else {
+            itemsComponent = itemComponents.get(0);
+            Component separator = Component.text(options.itemSeparator);
+            for (int i = 1; i < itemComponents.size(); i++) {
+                itemsComponent = itemsComponent.append(separator).append(itemComponents.get(i));
+            }
+        }
+
         menuComponents.add(itemsComponent);
 
         if (!options.footerFormat.contains(Component.text(""))) {
@@ -155,7 +167,18 @@ public class PaginatedList {
             menuComponents.add(formatPageString(options.footerFormat, page));
         }
 
-        return joinComponents(menuComponents, Component.newline());
+        if (menuComponents.isEmpty()) {
+            return Component.empty();
+        } else if (menuComponents.size() == 1) {
+            return menuComponents.get(0);
+        } else {
+            Component result = menuComponents.get(0);
+            Component separator = Component.newline();
+            for (int i = 1; i < menuComponents.size(); i++) {
+                result = result.append(separator).append(menuComponents.get(i));
+            }
+            return result;
+        }
     }
 
     /**
@@ -180,6 +203,7 @@ public class PaginatedList {
 
     @NotNull
     private Component formatPageString(@NotNull Component component, int page) {
+        // somehow these didn't work inside a single replaceText() call - Ari
         component = component.replaceText(configurer -> {
             configurer.matchLiteral("%color%").replacement(String.format("#%02x%02x%02x", options.themeColor.getRed(), options.themeColor.getGreen(), options.themeColor.getBlue()));
         });
@@ -263,7 +287,6 @@ public class PaginatedList {
 
     @NotNull
     protected Component getPageJumperButtons(final int page) {
-        Component result = Component.empty();
         Component groupSeparator = options.pageJumperGroupSeparator;
         Component pageSeparator = options.pageJumperPageSeparator;
 
@@ -274,9 +297,16 @@ public class PaginatedList {
         for (int i = 1; i <= getTotalPages(); i++) {
             if (i <= options.pageJumperStartButtons || i > getTotalPages() - options.pageJumperEndButtons || page == i) {
                 if (i - lastPage > 1) {
-                    // Add current page group and start a new one
                     if (!pages.isEmpty()) {
-                        pageGroups.add(joinComponents(pages, pageSeparator));
+                        if (pages.size() == 1) {
+                            pageGroups.add(pages.get(0));
+                        } else {
+                            Component result = pages.get(0);
+                            for (int j = 1; j < pages.size(); j++) {
+                                result = result.append(pageSeparator).append(pages.get(j));
+                            }
+                            pageGroups.add(result);
+                        }
                         pages = new ArrayList<>();
                     }
                 }
@@ -291,26 +321,27 @@ public class PaginatedList {
         }
 
         if (!pages.isEmpty()) {
-            pageGroups.add(joinComponents(pages, pageSeparator));
+            if (pages.size() == 1) {
+                pageGroups.add(pages.get(0));
+            } else {
+                Component result = pages.get(0);
+                for (int j = 1; j < pages.size(); j++) {
+                    result = result.append(pageSeparator).append(pages.get(j));
+                }
+                pageGroups.add(result);
+            }
         }
 
-        return joinComponents(pageGroups, groupSeparator);
-    }
-
-    @NotNull
-    private Component joinComponents(List<Component> components, Component separator) {
-        if (components.isEmpty()) {
+        if (pageGroups.isEmpty()) {
             return Component.empty();
+        } else if (pageGroups.size() == 1) {
+            return pageGroups.get(0);
+        } else {
+            Component result = pageGroups.get(0);
+            for (int i = 1; i < pageGroups.size(); i++) {
+                result = result.append(groupSeparator).append(pageGroups.get(i));
+            }
+            return result;
         }
-        if (components.size() == 1) {
-            return components.get(0);
-        }
-
-        Component result = components.get(0);
-        for (int i = 1; i < components.size(); i++) {
-            result = result.append(separator).append(components.get(i));
-        }
-        return result;
     }
-
 }
